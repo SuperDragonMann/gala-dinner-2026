@@ -13,7 +13,7 @@ const CONFIG = {
   PAGE_URL: 'https://superdragonmann.github.io/gala-dinner-2026/',
   // Optional last time guests can submit, e.g. '2026-11-30T23:59:00+08:00'. '' = no deadline.
   DEADLINE: '',
-  EVENT_TITLE: 'Gala Dinner cum NEXX AI and Innovation Award Ceremony',
+  EVENT_TITLE: 'Gala Dinner cum NEXX AI and Innovation Leader Awards 2026 Ceremony',
   EMAIL_SUBJECT: 'Gala Dinner 3 Dec 2026 — please choose your main course',
   REMINDER_SUBJECT: 'Reminder: choose your main course for the Gala Dinner (3 Dec)',
   SENDER_NAME: 'NEXX Innovation Alliance & HKSAII'
@@ -39,10 +39,10 @@ const DISH = {
 const RUNDOWN = [
   ['6:00 – 6:30pm', 'Reception Open', ''],
   ['6:30 – 6:35pm', 'Opening Remarks', 'Mann Yim, President, Hong Kong Society of Artificial Intelligence and Innovation (HKSAII)'],
-  ['6:35 – 6:45pm', 'Keynote', 'Digital Policy Office (DPO) — speaker to be confirmed'],
+  ['6:35 – 6:45pm', 'Keynote', 'Digital Policy Office (DPO) — Ms. Cari Wu, Assistant Commissioner (Mainland and Industry Collaboration)'],
   ['6:45 – 7:00pm', 'Fireside Chat: Navigating the AI Shift — Talent Development, Data Governance, and the Future of Business Models', 'Moderator: Mann Yim (HKSAII) · Guest Speaker: SK Cheong, Chairman of the Hong Kong Economic Journal and Vice Chairman of HK Television Entertainment (ViuTV)'],
   ['7:00 – 8:20pm', 'Gala Dinner', ''],
-  ['8:20 – 8:35pm', '2nd Edition NEXX AI and Innovation Leader Awards', 'Awardees: CIOs / CTOs'],
+  ['8:20 – 8:35pm', 'NEXX AI and Innovation Leader Awards 2026 Ceremony', 'Awardees: Distinguished Senior IT Executives / CIOs / CTOs'],
   ['8:35 – 9:00pm', 'Group Photo and Networking', '']
 ];
 const COL = {}; HEAD.forEach((h, i) => COL[h] = i);
@@ -303,7 +303,7 @@ function confirmationHtml_(row, k, updated) {
   const d = DISH[k] || { zh: '', en: '' };
   const diet = String(row[COL['Dietary / Allergy Notes']] || '');
   const link = String(row[COL['Personal Link']] || base);
-  const gcal = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent('Gala Dinner cum NEXX AI and Innovation Award Ceremony') +
+  const gcal = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent('Gala Dinner cum NEXX AI and Innovation Leader Awards 2026 Ceremony') +
     '&dates=20261203T100000Z/20261203T130000Z&location=' + encodeURIComponent('9/F, Bank of China (Hong Kong) Complex, City University of Hong Kong, Kowloon Tong') +
     '&details=' + encodeURIComponent('Your main course: ' + k + ') ' + d.en + '\nMenu link: ' + link);
   const red = '#b2351f', ink = '#2a1d17', soft = '#6b5a4e', cream = '#f6ead3';
@@ -313,7 +313,7 @@ function confirmationHtml_(row, k, updated) {
     '</td><td style="padding:9px 0;vertical-align:top;font-size:14px;color:' + ink + '"><b>' + esc(x[1]) + '</b>' + (x[2] ? '<br><span style="color:' + soft + ';font-size:13px">' + esc(x[2]) + '</span>' : '') + '</td></tr>').join('');
   return '<div style="margin:0;padding:0;background:' + cream + '"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:' + cream + '"><tr><td align="center" style="padding:20px 10px">' +
     '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#fffaf0;border-radius:14px;overflow:hidden;font-family:Arial,Helvetica,sans-serif;color:' + ink + '">' +
-    '<tr><td><img src="' + base + 'assets/email-header.jpg" width="600" alt="Gala Dinner cum NEXX AI and Innovation Award Ceremony" style="display:block;width:100%;height:auto;border:0"></td></tr>' +
+    '<tr><td><img src="' + base + 'assets/email-header.jpg" width="600" alt="Gala Dinner cum NEXX AI and Innovation Leader Awards 2026 Ceremony" style="display:block;width:100%;height:auto;border:0"></td></tr>' +
     '<tr><td style="background:' + red + ';color:#fff6e6;padding:14px 24px;font-size:14px;text-align:center"><b>Thursday 3 December 2026 · 6:00 – 9:00pm</b><br>9/F, Bank of China (Hong Kong) Complex, City University of Hong Kong, Kowloon Tong</td></tr>' +
     '<tr><td style="padding:28px 28px 8px"><p style="margin:0 0 6px;font-size:16px">Dear ' + esc(name || 'Guest') + ',</p>' +
     '<p style="margin:0;font-size:15px;line-height:1.55">' + (updated ? 'Your menu choice has been <b>updated</b>.' : 'Thank you — your menu choice is confirmed.') + ' Please keep this email for your record.<br><span style="color:' + soft + '">多謝！你的晚宴菜單選擇已確認，請保留此電郵作記錄。</span></p></td></tr>' +
@@ -348,7 +348,7 @@ function icsFor_(row, k) {
   const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//NEXX Innovation Alliance & HKSAII//Gala Dinner 2026//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
     'BEGIN:VEVENT', 'UID:gala-2026-' + row[COL.Code] + '@nexx-hksaii.hk', 'DTSTAMP:' + stamp,
     'DTSTART:20261203T100000Z', 'DTEND:20261203T130000Z',
-    'SUMMARY:' + esc('Gala Dinner cum NEXX AI and Innovation Award Ceremony'),
+    'SUMMARY:' + esc('Gala Dinner cum NEXX AI and Innovation Leader Awards 2026 Ceremony'),
     'LOCATION:' + esc('9/F, Bank of China (Hong Kong) Complex, City University of Hong Kong, Kowloon Tong, Hong Kong'),
     'DESCRIPTION:' + esc('Your main course: ' + k + ') ' + d.en + '\nReception opens 6:00pm.\nYour menu link: ' + row[COL['Personal Link']]),
     'URL:' + row[COL['Personal Link']],
