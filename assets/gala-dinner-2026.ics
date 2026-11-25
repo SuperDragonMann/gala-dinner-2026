@@ -1,0 +1,29 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//NEXX Innovation Alliance & HKSAII//Gala Dinner 2026//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:gala-dinner-2026-12-03@nexx-hksaii.hk
+DTSTAMP:20261125T000000Z
+DTSTART:20261203T100000Z
+DTEND:20261203T130000Z
+SUMMARY:Gala Dinner cum NEXX AI and Innovation Award Ceremony
+LOCATION:9/F\, Bank of China (Hong Kong) Complex\, City University of Hong 
+ Kong\, Kowloon Tong\, Hong Kong
+DESCRIPTION:Reception opens 6:00pm. Gala dinner 7:00pm. 2nd edition NEXX AI
+  and Innovation Leader Awards 8:20pm.\nView or change your menu choice wit
+ h your personal link.
+URL:https://superdragonmann.github.io/gala-dinner-2026/
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Gala Dinner tomorrow
+TRIGGER:-P1D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Gala Dinner in 2 hours
+TRIGGER:-PT2H
+END:VALARM
+END:VEVENT
+END:VCALENDAR

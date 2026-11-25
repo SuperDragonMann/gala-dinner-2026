@@ -27,7 +27,24 @@ const MAINS = {
 };
 
 const HEAD = ['Code', 'First Name', 'Surname', 'Email', 'Organisation', 'Main Course', 'Dietary / Allergy Notes',
-  'Status', 'Source', 'Submitted At', 'Times Changed', 'Personal Link', 'Email Sent At', 'Last Updated By'];
+  'Status', 'Source', 'Submitted At', 'Times Changed', 'Personal Link', 'Email Sent At', 'Last Updated By', 'Confirmation Emailed At'];
+
+// Full dish names for the confirmation email
+const DISH = {
+  A: { zh: '法式烤羊架伴薯菜配紅酒汁', en: 'French Roasted Rack of Lamb with Vegetables and Red Wine Sauce' },
+  B: { zh: '美國安格斯肉眼配紅酒汁 (10oz)', en: 'Grilled U.S. Angus Ribeye Steak with Red Wine Sauce (10oz)' },
+  C: { zh: '香煎銀鱈魚柳配焦糖檸蜜汁', en: 'Pan-Seared Baked Cod Fillet with Caramel Lemon Glaze' },
+  D: { zh: '普羅旺斯菜伴扒露荀大啡菇配黑松露醬燴雜菌意大利飯', en: 'Ratatouille with Grilled Asparagus and Portobello Mushroom and Black Truffle Mixed Mushroom Risotto (Vegetarian)' }
+};
+const RUNDOWN = [
+  ['6:00 – 6:30pm', 'Reception Open', ''],
+  ['6:30 – 6:35pm', 'Opening Remarks', 'Mann Yim, President, Hong Kong Society of Artificial Intelligence and Innovation (HKSAII)'],
+  ['6:35 – 6:45pm', 'Keynote', 'Digital Policy Office (DPO) — speaker to be confirmed'],
+  ['6:45 – 7:00pm', 'Fireside Chat: Navigating the AI Shift — Talent Development, Data Governance, and the Future of Business Models', 'Moderator: Mann Yim (HKSAII) · Guest Speaker: SK Cheong, Chairman of the Hong Kong Economic Journal and Vice Chairman of HK Television Entertainment (ViuTV)'],
+  ['7:00 – 8:20pm', 'Gala Dinner', ''],
+  ['8:20 – 8:35pm', '2nd Edition NEXX AI and Innovation Leader Awards', 'Awardees: CIOs / CTOs'],
+  ['8:35 – 9:00pm', 'Group Photo and Networking', '']
+];
 const COL = {}; HEAD.forEach((h, i) => COL[h] = i);
 
 /* ================= Web API ================= */
@@ -97,7 +114,14 @@ function submit_(p) {
     row[COL['Last Updated By']] = 'Guest';
     writeRow_(sh, r, row);
     log_('Guest ' + (r < 0 ? 'new' : 'update'), row);
-    return { guest: rowToGuest_(row) };
+    const rowNum = r < 0 ? sh.getLastRow() : r + 1;
+    let emailSent = false;
+    try {
+      sendConfirmation_(row, r >= 0 && Number(row[COL['Times Changed']]) > 0);
+      sh.getRange(rowNum, COL['Confirmation Emailed At'] + 1).setValue(new Date());
+      emailSent = true;
+    } catch (err) { console.warn('Confirmation email failed: ' + err); }
+    return { guest: rowToGuest_(row), emailSent: emailSent };
   });
 }
 
@@ -246,6 +270,104 @@ function emailHtml_(first, link, reminder) {
     '<p>We look forward to seeing you.<br>' + esc(CONFIG.SENDER_NAME) + '</p></div>';
 }
 
+/* ================= Confirmation email ================= */
+
+/** Run this once from the editor: it asks for e-mail permission and sends you a sample confirmation. */
+function testConfirmationEmail() {
+  const me = Session.getEffectiveUser().getEmail();
+  const row = blankRow_('SAMPLE');
+  row[COL['First Name']] = 'Test'; row[COL.Surname] = 'Guest'; row[COL.Email] = me;
+  row[COL['Main Course']] = MAINS.B; row[COL['Dietary / Allergy Notes']] = 'Nut allergy (sample)';
+  row[COL['Personal Link']] = linkFor_('SAMPLE');
+  sendConfirmation_(row, false);
+  Logger.log('Sample confirmation sent to ' + me);
+}
+
+function sendConfirmation_(row, updated) {
+  const email = String(row[COL.Email] || '');
+  if (!email) return;
+  const k = String(row[COL['Main Course']] || '').charAt(0);
+  MailApp.sendEmail({
+    to: email,
+    name: CONFIG.SENDER_NAME,
+    subject: (updated ? 'Updated: ' : '') + 'Your Gala Dinner menu confirmation — 3 Dec 2026 · 晚宴菜單確認',
+    htmlBody: confirmationHtml_(row, k, updated),
+    attachments: [Utilities.newBlob(icsFor_(row, k), 'text/calendar', 'Gala-Dinner-3-Dec-2026.ics')]
+  });
+}
+
+function confirmationHtml_(row, k, updated) {
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const base = CONFIG.PAGE_URL.replace(/\/?$/, '/');
+  const name = [row[COL['First Name']], row[COL.Surname]].filter(String).join(' ');
+  const d = DISH[k] || { zh: '', en: '' };
+  const diet = String(row[COL['Dietary / Allergy Notes']] || '');
+  const link = String(row[COL['Personal Link']] || base);
+  const gcal = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent('Gala Dinner cum NEXX AI and Innovation Award Ceremony') +
+    '&dates=20261203T100000Z/20261203T130000Z&location=' + encodeURIComponent('9/F, Bank of China (Hong Kong) Complex, City University of Hong Kong, Kowloon Tong') +
+    '&details=' + encodeURIComponent('Your main course: ' + k + ') ' + d.en + '\nMenu link: ' + link);
+  const red = '#b2351f', ink = '#2a1d17', soft = '#6b5a4e', cream = '#f6ead3';
+  const course = (label, zh, en) => '<tr><td style="padding:10px 0;border-bottom:1px solid #eadcc2;text-align:center">' +
+    '<div style="font-size:12px;color:#3e5a3b;letter-spacing:.04em">' + label + '</div><div style="font-size:15px;font-weight:bold;color:' + ink + '">' + zh + '</div><div style="font-size:13px;color:' + soft + '">' + en + '</div></td></tr>';
+  const rd = RUNDOWN.map(x => '<tr><td style="padding:9px 12px 9px 0;vertical-align:top;white-space:nowrap;color:' + red + ';font-weight:bold;font-size:14px">' + esc(x[0]) +
+    '</td><td style="padding:9px 0;vertical-align:top;font-size:14px;color:' + ink + '"><b>' + esc(x[1]) + '</b>' + (x[2] ? '<br><span style="color:' + soft + ';font-size:13px">' + esc(x[2]) + '</span>' : '') + '</td></tr>').join('');
+  return '<div style="margin:0;padding:0;background:' + cream + '"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:' + cream + '"><tr><td align="center" style="padding:20px 10px">' +
+    '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#fffaf0;border-radius:14px;overflow:hidden;font-family:Arial,Helvetica,sans-serif;color:' + ink + '">' +
+    '<tr><td><img src="' + base + 'assets/email-header.jpg" width="600" alt="Gala Dinner cum NEXX AI and Innovation Award Ceremony" style="display:block;width:100%;height:auto;border:0"></td></tr>' +
+    '<tr><td style="background:' + red + ';color:#fff6e6;padding:14px 24px;font-size:14px;text-align:center"><b>Thursday 3 December 2026 · 6:00 – 9:00pm</b><br>9/F, Bank of China (Hong Kong) Complex, City University of Hong Kong, Kowloon Tong</td></tr>' +
+    '<tr><td style="padding:28px 28px 8px"><p style="margin:0 0 6px;font-size:16px">Dear ' + esc(name || 'Guest') + ',</p>' +
+    '<p style="margin:0;font-size:15px;line-height:1.55">' + (updated ? 'Your menu choice has been <b>updated</b>.' : 'Thank you — your menu choice is confirmed.') + ' Please keep this email for your record.<br><span style="color:' + soft + '">多謝！你的晚宴菜單選擇已確認，請保留此電郵作記錄。</span></p></td></tr>' +
+    '<tr><td style="padding:18px 28px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:2px solid ' + red + ';border-radius:12px;background:#fff">' +
+    '<tr><td width="170" style="padding:14px;vertical-align:middle"><img src="' + base + 'assets/dish-' + k + '.jpg" width="150" height="150" alt="" style="display:block;border-radius:10px;border:0"></td>' +
+    '<td style="padding:14px 16px 14px 0;vertical-align:middle"><div style="font-size:12px;color:' + soft + '">Your main course 你的主菜</div>' +
+    '<div style="font-size:30px;font-weight:bold;color:' + red + ';line-height:1.1">' + esc(k) + '</div>' +
+    '<div style="font-size:16px;font-weight:bold;margin-top:4px">' + esc(d.zh) + '</div><div style="font-size:14px;color:' + soft + '">' + esc(d.en) + '</div>' +
+    (diet ? '<div style="font-size:13px;margin-top:8px"><b>Dietary notes:</b> ' + esc(diet) + '</div>' : '') + '</td></tr></table></td></tr>' +
+    '<tr><td style="padding:6px 28px 4px"><div style="font-size:18px;font-weight:bold;color:' + red + ';text-align:center;margin-bottom:4px">Your Gala Dinner Menu 晚宴菜單</div>' +
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0">' +
+    course('Salad 沙律', '牛油果蕃茄沙沙田園沙律', 'Avocado and Tomato Salsa Garden Salad') +
+    course('Soup 湯', '周打魚湯', 'New England Clam Chowder') +
+    course('Bread 麵包', '麵包及牛油', 'Bread &amp; Butter') +
+    course('Main course 主菜 — your choice', esc(k + ') ' + d.zh), esc(d.en)) +
+    course('Dessert 甜品', '草莓奶凍', 'Strawberry Panna Cotta') + '</table></td></tr>' +
+    '<tr><td style="padding:22px 28px 6px"><div style="font-size:18px;font-weight:bold;color:' + red + ';margin-bottom:6px">Event Rundown 活動流程</div>' +
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0">' + rd + '</table></td></tr>' +
+    '<tr><td style="padding:22px 28px;text-align:center">' +
+    '<a href="' + esc(gcal) + '" style="display:inline-block;margin:4px;background:' + red + ';color:#fff;text-decoration:none;padding:11px 18px;border-radius:8px;font-weight:bold;font-size:14px">Add to Google Calendar</a>' +
+    '<a href="' + base + 'assets/gala-dinner-2026.ics" style="display:inline-block;margin:4px;background:#fff;color:' + red + ';border:2px solid ' + red + ';text-decoration:none;padding:9px 16px;border-radius:8px;font-weight:bold;font-size:14px">Apple / Outlook Calendar</a>' +
+    '<div style="font-size:12px;color:' + soft + ';margin-top:8px">A calendar file (.ics) is also attached to this email.</div></td></tr>' +
+    '<tr><td style="padding:0 28px 26px;text-align:center;font-size:13px;color:' + soft + '">Need to change your choice? Use your personal link:<br><a href="' + esc(link) + '" style="color:' + red + '">' + esc(link) + '</a></td></tr>' +
+    '<tr><td style="background:' + red + ';color:#fff6e6;padding:14px 24px;font-size:12px;text-align:center">' + esc(CONFIG.SENDER_NAME) + '</td></tr>' +
+    '</table></td></tr></table></div>';
+}
+
+function icsFor_(row, k) {
+  const esc = s => String(s || '').replace(/\\/g, '\\\\').replace(/([,;])/g, '\\$1').replace(/\r?\n/g, '\\n');
+  const d = DISH[k] || { en: '' };
+  const stamp = Utilities.formatDate(new Date(), 'UTC', "yyyyMMdd'T'HHmmss'Z'");
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//NEXX Innovation Alliance & HKSAII//Gala Dinner 2026//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+    'BEGIN:VEVENT', 'UID:gala-2026-' + row[COL.Code] + '@nexx-hksaii.hk', 'DTSTAMP:' + stamp,
+    'DTSTART:20261203T100000Z', 'DTEND:20261203T130000Z',
+    'SUMMARY:' + esc('Gala Dinner cum NEXX AI and Innovation Award Ceremony'),
+    'LOCATION:' + esc('9/F, Bank of China (Hong Kong) Complex, City University of Hong Kong, Kowloon Tong, Hong Kong'),
+    'DESCRIPTION:' + esc('Your main course: ' + k + ') ' + d.en + '\nReception opens 6:00pm.\nYour menu link: ' + row[COL['Personal Link']]),
+    'URL:' + row[COL['Personal Link']],
+    'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:Gala Dinner tomorrow', 'TRIGGER:-P1D', 'END:VALARM',
+    'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:Gala Dinner in 2 hours', 'TRIGGER:-PT2H', 'END:VALARM',
+    'END:VEVENT', 'END:VCALENDAR'];
+  return lines.map(foldIcs_).join('\r\n') + '\r\n';
+}
+function foldIcs_(line) {
+  const out = []; let cur = '', len = 0;
+  for (const ch of line) {
+    const n = Utilities.newBlob(ch).getBytes().length;
+    if (len + n > (out.length ? 74 : 75)) { out.push(cur); cur = ''; len = 0; }
+    cur += ch; len += n;
+  }
+  out.push(cur);
+  return out.join('\r\n ');
+}
+
 /* ================= Helpers ================= */
 
 function ensureSheets_() {
@@ -256,6 +378,9 @@ function ensureSheets_() {
     g.getRange(1, 1, 1, HEAD.length).setValues([HEAD]).setFontWeight('bold').setBackground('#b2351f').setFontColor('#ffffff');
     g.setFrozenRows(1);
     g.setColumnWidths(1, HEAD.length, 140); g.setColumnWidth(6, 320); g.setColumnWidth(7, 240); g.setColumnWidth(12, 330);
+  }
+  if (g.getRange(1, HEAD.length).getValue() !== HEAD[HEAD.length - 1]) {
+    g.getRange(1, HEAD.length).setValue(HEAD[HEAD.length - 1]).setFontWeight('bold').setBackground('#b2351f').setFontColor('#ffffff');
   }
   if (!ss.getSheetByName('Summary')) {
     const s = ss.insertSheet('Summary', 1);
