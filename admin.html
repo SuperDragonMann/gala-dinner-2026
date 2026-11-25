@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Gala Menu · Admin</title>
+<link rel="icon" href="assets/favicon.png">
+<link href="https://fonts.googleapis.com/css2?family=Delius&family=Noto+Sans+HK:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: calm working dashboard for the organiser  IDEA: the kitchen's order board
+   PICTURE: main-course tally bars  COLOUR: poster red, cream, ink, green  TYPE: Delius + Noto Sans HK
+   LAYOUT: header, tally tiles, toolbar, guest table, edit drawer */
+:root{--red:#b2351f;--red-d:#8f2915;--cream:#f6ead3;--paper:#fffaf0;--ink:#2a1d17;--soft:#6b5a4e;--green:#3e5a3b;--gold:#d9a441;--line:#e3d3b6}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--cream);color:var(--ink);font:15px/1.5 "Noto Sans HK",system-ui,sans-serif}
+h1,h2,h3{font-family:Delius,cursive;font-weight:400;margin:0;line-height:1.15}
+header{background:var(--red);color:#fff6e6;padding:18px max(4vw,16px);display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+header h1{font-size:clamp(24px,3vw,34px);flex:1 1 auto}
+header a{color:#fff6e6}
+.wrap{max-width:1300px;margin:0 auto;padding:22px max(4vw,16px) 60px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:22px}
+.tile{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.tile .k{font-size:13.5px;color:var(--soft)}
+.tile .v{font:34px/1.1 Delius,cursive;color:var(--red)}
+.tile .bar{height:8px;border-radius:9px;background:#efe2c9;margin-top:8px;overflow:hidden}
+.tile .bar b{display:block;height:100%;background:var(--red);transition:width .5s}
+.tile.g .v{color:var(--green)}.tile.g .bar b{background:var(--green)}
+.tile .dish{font-size:13px;color:var(--soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.tools input,.tools select{font:15px "Noto Sans HK",sans-serif;min-height:42px;padding:0 12px;border:1.5px solid #cdb994;border-radius:10px;background:#fff}
+.tools input{flex:1 1 240px}
+.btn{font:600 15px "Noto Sans HK",sans-serif;min-height:42px;padding:0 16px;border:0;border-radius:10px;background:var(--red);color:#fff;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center}
+.btn:hover{background:var(--red-d)}
+.btn.ghost{background:#fff;color:var(--red);border:1.5px solid var(--red)}
+.btn.sm{min-height:34px;padding:0 10px;font-size:13.5px}
+.btn.danger{background:#fff;color:#a3180a;border:1.5px solid #e0b4a8}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-weight:500;color:var(--soft);background:#fbf2e2;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none}
+td{padding:10px 12px;border-bottom:1px solid #efe3cc;vertical-align:top}
+tr:hover td{background:#fff8ec}
+.pill{display:inline-block;border-radius:99px;padding:1px 10px;font-size:12.5px;white-space:nowrap}
+.pill.ok{background:#e3eedd;color:var(--green)}.pill.wait{background:#fde7dc;color:#a3180a}
+.mainL{font:20px Delius,cursive;color:var(--red)}
+.muted{color:var(--soft);font-size:13px}
+.acts{white-space:nowrap;display:flex;gap:6px}
+.empty{padding:40px;text-align:center;color:var(--soft)}
+.notes{margin-top:22px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+.notes .card{padding:16px}
+.notes ul{margin:8px 0 0;padding-left:18px}
+dialog{border:0;border-radius:16px;padding:0;width:min(560px,94vw);box-shadow:0 30px 60px -20px rgba(0,0,0,.5)}
+dialog::backdrop{background:rgba(42,29,23,.45)}
+dialog form{padding:22px}
+dialog h2{color:var(--red);margin-bottom:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{display:block;font-size:13.5px;color:var(--soft);margin-bottom:4px}
+dialog input,dialog select,dialog textarea{width:100%;font:16px "Noto Sans HK",sans-serif;padding:9px 11px;border:1.5px solid #cdb994;border-radius:9px;background:#fff}
+dialog textarea{min-height:70px}
+.row{margin-top:12px}
+.foot{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(120px);background:var(--ink);color:#fff;padding:12px 18px;border-radius:10px;transition:transform .3s;z-index:9}
+.toast.on{transform:translateX(-50%) translateY(0)}
+.gate{max-width:460px;margin:60px auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:24px}
+.hide{display:none!important}
+@media(max-width:760px){.notes{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}
+  .stack thead{display:none}.stack tr{display:grid;padding:10px 0;border-bottom:1px solid var(--line)}.stack td{border:0;padding:3px 12px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Gala Dinner · Menu admin</h1>
+  <a class="btn ghost sm" id="sheetLink" href="#" target="_blank" rel="noopener">Open Google Sheet</a>
+  <a class="btn ghost sm" href="./" target="_blank" rel="noopener">Guest page</a>
+</header>
+
+<div class="gate hide" id="gate">
+  <h2 style="color:var(--red);margin-bottom:8px">Admin key needed</h2>
+  <p class="muted">Use the admin link from the Google Sheet (Summary tab, cell I2, or menu Gala Menu → Show admin page link).</p>
+  <form id="keyForm" style="display:flex;gap:8px;margin-top:12px"><input id="keyIn" placeholder="Admin key" style="flex:1;font:16px sans-serif;padding:10px;border:1.5px solid #cdb994;border-radius:9px"><button class="btn">Open</button></form>
+  <p class="muted" id="gateMsg"></p>
+</div>
+
+<div class="wrap hide" id="app">
+  <div class="tiles" id="tiles"></div>
+  <div class="tools">
+    <input id="q" type="search" placeholder="Search name, email, organisation, code…">
+    <select id="filt"><option value="">All guests</option><option value="Selected">Chosen</option><option value="Pending">Not chosen</option><option value="diet">Has dietary notes</option><option value="self">Self sign-ups</option></select>
+    <select id="fmain"><option value="">All mains</option><option>A</option><option>B</option><option>C</option><option>D</option></select>
+    <button class="btn" id="addBtn" type="button">+ Add guest</button>
+    <button class="btn ghost" id="csvBtn" type="button">Export CSV</button>
+    <button class="btn ghost" id="refBtn" type="button">Refresh</button>
+  </div>
+  <div class="card scroll">
+    <table class="stack" id="tbl">
+      <thead><tr><th data-s="name">Guest</th><th data-s="org">Organisation</th><th data-s="main">Main</th><th>Dietary / allergy</th><th data-s="status">Status</th><th data-s="submittedAt">Submitted</th><th>Link</th><th></th></tr></thead>
+      <tbody id="rows"><tr><td colspan="8" class="empty">Loading…</td></tr></tbody>
+    </table>
+  </div>
+  <p class="muted" id="countLine"></p>
+  <div class="notes">
+    <div class="card"><h3>Kitchen order</h3><ul id="kitchen"></ul></div>
+    <div class="card"><h3>Dietary & allergy notes</h3><ul id="diets"></ul></div>
+  </div>
+</div>
+
+<dialog id="dlg">
+  <form method="dialog" id="edit">
+    <h2 id="dlgTitle">Edit guest</h2>
+    <div class="grid2">
+      <div><label for="eFirst">First name</label><input id="eFirst" maxlength="60"></div>
+      <div><label for="eLast">Surname</label><input id="eLast" maxlength="60"></div>
+    </div>
+    <div class="row"><label for="eEmail">Email</label><input id="eEmail" type="email" maxlength="160"></div>
+    <div class="row"><label for="eOrg">Organisation</label><input id="eOrg" maxlength="160"></div>
+    <div class="row"><label for="eMain">Main course</label><select id="eMain"><option value="">— Not chosen —</option></select></div>
+    <div class="row"><label for="eDiet">Dietary / allergy notes</label><textarea id="eDiet" maxlength="500"></textarea></div>
+    <p class="muted" id="eMeta"></p>
+    <div class="foot"><button class="btn ghost" value="cancel" type="button" id="cancelBtn">Cancel</button><button class="btn" id="saveBtn" type="submit">Save</button></div>
+  </form>
+</dialog>
+<div class="toast" id="toast"></div>
+
+<script src="config.js"></script>
+<script>
+{
+const API = window.GALA_API || '';
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let KEY = new URLSearchParams(location.search).get('k') || '';
+let data = null, editing = null, sortKey = 'name', sortDir = 1;
+
+async function api(action, extra){
+  const r = await fetch(API,{method:'POST',body:JSON.stringify(Object.assign({action,key:KEY},extra||{}))});
+  const j = await r.json(); if(!j.ok) throw new Error(j.error||'Request failed'); return j;
+}
+function toast(t){ const el=$('toast'); el.textContent=t; el.classList.add('on'); clearTimeout(toast.t); toast.t=setTimeout(()=>el.classList.remove('on'),2600); }
+const fullName = g => [g.firstName,g.surname].filter(Boolean).join(' ');
+
+async function load(){
+  try{
+    data = await api('adminData');
+    $('gate').classList.add('hide'); $('app').classList.remove('hide');
+    $('sheetLink').href = data.sheetUrl;
+    if($('eMain').options.length===1) Object.entries(data.mains).forEach(([k,v])=>$('eMain').add(new Option(v,k)));
+    render();
+  }catch(err){
+    $('app').classList.add('hide'); $('gate').classList.remove('hide'); $('gateMsg').textContent = KEY ? err.message : '';
+  }
+}
+
+function render(){
+  const G = data.guests, total = G.length, chosen = G.filter(g=>g.main).length;
+  const cnt = {A:0,B:0,C:0,D:0}; G.forEach(g=>{ if(cnt[g.main]!=null) cnt[g.main]++; });
+  const pct = n => total ? Math.round(n/total*100) : 0;
+  $('tiles').innerHTML =
+    `<div class="tile g"><div class="k">Responded</div><div class="v">${chosen} / ${total}</div><div class="bar"><b style="width:${pct(chosen)}%"></b></div></div>`+
+    `<div class="tile"><div class="k">Not chosen yet</div><div class="v">${total-chosen}</div><div class="bar"><b style="width:${pct(total-chosen)}%"></b></div></div>`+
+    Object.keys(cnt).map(k=>`<div class="tile"><div class="k">Main ${k}</div><div class="v">${cnt[k]}</div><div class="dish">${esc(data.mains[k].slice(3))}</div><div class="bar"><b style="width:${chosen?Math.round(cnt[k]/chosen*100):0}%"></b></div></div>`).join('');
+
+  const q = $('q').value.trim().toLowerCase(), f = $('filt').value, fm = $('fmain').value;
+  let list = G.filter(g=>{
+    if(q && ![fullName(g),g.email,g.org,g.code,g.dietary].join(' ').toLowerCase().includes(q)) return false;
+    if(f==='Selected' && !g.main) return false;
+    if(f==='Pending' && g.main) return false;
+    if(f==='diet' && !g.dietary) return false;
+    if(f==='self' && !/self/i.test(g.source)) return false;
+    if(fm && g.main!==fm) return false;
+    return true;
+  });
+  const keyOf = g => sortKey==='name' ? (g.surname+' '+g.firstName).toLowerCase() : String(g[sortKey]||'').toLowerCase();
+  list.sort((a,b)=>keyOf(a)<keyOf(b)?-sortDir:keyOf(a)>keyOf(b)?sortDir:0);
+  $('rows').innerHTML = list.length ? list.map(g=>`<tr>
+    <td><b>${esc(fullName(g)||'—')}</b><div class="muted">${esc(g.email)}</div><div class="muted">${esc(g.code)}${g.source?' · '+esc(g.source):''}</div></td>
+    <td>${esc(g.org)}</td>
+    <td>${g.main?`<span class="mainL">${esc(g.main)}</span>`:'<span class="muted">—</span>'}</td>
+    <td>${esc(g.dietary)}</td>
+    <td>${g.main?'<span class="pill ok">Chosen</span>':'<span class="pill wait">Pending</span>'}${g.changed?`<div class="muted">changed ${g.changed}×</div>`:''}</td>
+    <td class="muted">${esc(g.submittedAt)}${g.updatedBy?`<div>${esc(g.updatedBy)}</div>`:''}</td>
+    <td><button class="btn ghost sm" data-copy="${esc(g.code)}" type="button">Copy link</button></td>
+    <td><div class="acts"><button class="btn sm" data-edit="${esc(g.code)}" type="button">Edit</button><button class="btn danger sm" data-del="${esc(g.code)}" type="button">Delete</button></div></td></tr>`).join('')
+    : `<tr><td colspan="8" class="empty">${total?'No guests match this filter.':'No guests yet. Add guests here or paste them into the Guests tab of the Google Sheet.'}</td></tr>`;
+  $('countLine').textContent = `Showing ${list.length} of ${total} guests`;
+  $('kitchen').innerHTML = Object.keys(cnt).map(k=>`<li><b>${cnt[k]}</b> × ${esc(data.mains[k])}</li>`).join('') + `<li class="muted">${total-chosen} guest(s) still to choose</li>`;
+  const d = G.filter(g=>g.dietary);
+  $('diets').innerHTML = d.length ? d.map(g=>`<li><b>${esc(fullName(g))}</b> (${esc(g.main||'—')}): ${esc(g.dietary)}</li>`).join('') : '<li class="muted">None so far</li>';
+}
+
+function openEdit(g){
+  editing = g || null;
+  $('dlgTitle').textContent = g ? 'Edit guest' : 'Add guest';
+  $('eFirst').value=g?.firstName||''; $('eLast').value=g?.surname||''; $('eEmail').value=g?.email||'';
+  $('eOrg').value=g?.org||''; $('eMain').value=g?.main||''; $('eDiet').value=g?.dietary||'';
+  $('eMeta').textContent = g ? `Code ${g.code}${g.submittedAt?' · submitted '+g.submittedAt:''}${g.emailedAt?' · emailed '+g.emailedAt:''}` : 'A personal code and link are created automatically.';
+  $('dlg').showModal();
+}
+$('rows').addEventListener('click', async e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  const g = data.guests.find(x=>x.code===(b.dataset.edit||b.dataset.del||b.dataset.copy));
+  if(b.dataset.edit) openEdit(g);
+  if(b.dataset.copy){ try{ await navigator.clipboard.writeText(g.link); toast('Personal link copied'); }catch(_){ toast(g.link); } }
+  if(b.dataset.del){
+    if(b.dataset.armed){ b.disabled=true; try{ await api('adminDelete',{code:g.code}); data.guests=data.guests.filter(x=>x!==g); render(); toast('Guest deleted'); }catch(err){ toast(err.message); b.disabled=false; } }
+    else { b.dataset.armed='1'; b.textContent='Confirm?'; setTimeout(()=>{ if(b.isConnected){ delete b.dataset.armed; b.textContent='Delete'; } },3000); }
+  }
+});
+$('edit').addEventListener('submit', async e=>{
+  e.preventDefault(); $('saveBtn').disabled=true; $('saveBtn').textContent='Saving…';
+  try{
+    const r = await api('adminSave',{guest:{code:editing?.code||'',firstName:$('eFirst').value,surname:$('eLast').value,email:$('eEmail').value,org:$('eOrg').value,main:$('eMain').value,dietary:$('eDiet').value}});
+    if(editing) Object.assign(editing, r.guest); else data.guests.push(r.guest);
+    $('dlg').close(); render(); toast('Saved');
+  }catch(err){ toast(err.message); }
+  finally{ $('saveBtn').disabled=false; $('saveBtn').textContent='Save'; }
+});
+$('cancelBtn').addEventListener('click',()=>$('dlg').close());
+$('addBtn').addEventListener('click',()=>openEdit(null));
+$('refBtn').addEventListener('click',()=>{ toast('Refreshing…'); load(); });
+['q','filt','fmain'].forEach(id=>$(id).addEventListener('input',render));
+document.querySelector('thead').addEventListener('click',e=>{ const s=e.target.closest('th')?.dataset.s; if(!s) return; sortDir = sortKey===s ? -sortDir : 1; sortKey=s; render(); });
+$('csvBtn').addEventListener('click',()=>{
+  const cols=['code','firstName','surname','email','org','main','dietary','status','source','submittedAt','changed','link'];
+  const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const csv='﻿'+cols.join(',')+'\n'+data.guests.map(g=>cols.map(c=>q(c==='main'&&g.main?data.mains[g.main]:g[c])).join(',')).join('\n');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='gala-menu-choices.csv'; document.body.appendChild(a); a.click(); a.remove();
+});
+$('keyForm').addEventListener('submit',e=>{ e.preventDefault(); KEY=$('keyIn').value.trim(); history.replaceState(null,'','?k='+encodeURIComponent(KEY)); load(); });
+setInterval(()=>{ if(data && !$('dlg').open && document.visibilityState==='visible') api('adminData').then(r=>{data=r;render();}).catch(()=>{}); },60000);
+if(KEY) load(); else $('gate').classList.remove('hide');
+}
+</script>
+</body>
+</html>

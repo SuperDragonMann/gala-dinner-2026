@@ -1,0 +1,1 @@
+window.GALA_API='';
